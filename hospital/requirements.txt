@@ -1,0 +1,24 @@
+# Federated Learning Client
+flwr==1.11.1
+
+# Machine Learning
+torch==2.1.0
+torchvision==0.16.0
+scikit-learn==1.3.2
+numpy==1.24.3
+pandas==2.1.3
+
+# Communication
+grpcio
+protobuf
+
+# Data Processing
+pyarrow
+
+# Logging
+loguru==0.7.2
+python-dotenv==1.0.0
+tqdm==4.66.1
+
+# Privacy (optional)
+cryptography

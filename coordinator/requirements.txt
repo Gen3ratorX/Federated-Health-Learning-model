@@ -1,0 +1,23 @@
+# Federated Learning Server
+flwr==1.11.1
+
+# Machine Learning (for model aggregation)
+torch==2.1.0
+numpy==1.24.3
+
+# API Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Communication
+grpcio
+protobuf
+# Monitoring
+mlflow
+loguru==0.7.2
+python-dotenv==1.0.0
+
+# Utilities
+python-multipart==0.0.6

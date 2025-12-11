@@ -1,0 +1,85 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# Environment variables
+.env
+.env.local
+
+# Data (don't commit large datasets to git)
+data/hospital_*/patient_data.csv
+data/hospital_*/metadata.json
+data/combined_metadata.json
+*.csv
+*.parquet
+
+# Monitoring & Logs
+monitoring/logs/*.log
+monitoring/mlflow/
+mlruns/
+*.log
+
+# MLflow
+mlartifacts/
+
+# Docker
+*.log
+docker-compose.override.yml
+
+# Generated protobuf files
+*_pb2.py
+*_pb2_grpc.py
+
+# Model checkpoints
+*.pth
+*.pt
+*.ckpt
+checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
