@@ -3,6 +3,13 @@ Flower Client Implementation for Hospital Nodes
 Handles federated learning participation
 """
 
+# Fix for Windows Unicode/Emoji support
+import sys
+import io
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 import flwr as fl
 from flwr.common import (
     Code,

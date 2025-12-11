@@ -3,6 +3,13 @@ Local training logic for hospital nodes
 Handles model training and evaluation on private data
 """
 
+# Fix for Windows Unicode/Emoji support
+import sys
+import io
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 import torch
 import torch.nn as nn
 import torch.optim as optim

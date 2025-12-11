@@ -3,6 +3,13 @@ Flower Server Implementation for Federated Learning Coordinator
 Manages aggregation and orchestration of federated learning rounds
 """
 
+# Fix for Windows Unicode/Emoji support
+import sys
+import io
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 import flwr as fl
 from flwr.common import (
     FitRes,
@@ -375,7 +382,7 @@ def start_server(
     """
     
     print(f"\n{'='*60}")
-    print("STARTING FEDERATED LEARNING COORDINATOR")
+    print("🚀 STARTING FEDERATED LEARNING COORDINATOR")
     print(f"{'='*60}")
     print(f"Server address: {server_address}")
     print(f"Number of rounds: {num_rounds}")

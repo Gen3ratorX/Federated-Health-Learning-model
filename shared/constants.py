@@ -30,7 +30,7 @@ TARGET_COLUMN = 'at_risk'
 
 # --- TRAINING CONFIGURATION ---
 BATCH_SIZE = 32
-LOCAL_EPOCHS = 5      # How many loops the hospital trains locally per round
+LOCAL_EPOCHS = 2     # How many loops the hospital trains locally per round
 LEARNING_RATE = 0.001
 # Automatically detect GPU
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

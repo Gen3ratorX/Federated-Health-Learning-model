@@ -82,11 +82,13 @@ class FederatedLearningSimulation:
     def start_hospital_client(self, hospital_id: int):
         """
         Start a hospital client
-        
-        Args:
-            hospital_id: Hospital identifier (1, 2, or 3)
         """
         print(f"🏥 Starting Hospital {hospital_id} client...")
+        
+        # Create a log file for this hospital
+        log_dir = Path("logs")
+        log_dir.mkdir(exist_ok=True)
+        log_file = open(log_dir / f"hospital_{hospital_id}.log", "w", encoding='utf-8')
         
         client_cmd = [
             sys.executable,
@@ -95,10 +97,11 @@ class FederatedLearningSimulation:
             "--server", self.server_address
         ]
         
+        # KEY FIX: Write to file, not PIPE. This prevents buffer deadlock.
         client_process = subprocess.Popen(
             client_cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            stdout=log_file,
+            stderr=subprocess.STDOUT, 
             text=True,
             bufsize=1
         )
@@ -106,7 +109,7 @@ class FederatedLearningSimulation:
         self.processes.append(client_process)
         
         # Give client time to connect
-        time.sleep(2)
+        time.sleep(3) # Increased wait time slightly
         
         return client_process
     
@@ -126,14 +129,24 @@ class FederatedLearningSimulation:
         print(f"\n{'='*60}")
         print("📊 FEDERATED LEARNING IN PROGRESS")
         print(f"{'='*60}")
-        print("Monitoring coordinator output...\n")
+        print("Monitoring coordinator output...")
+        print(f"(Each round takes ~30-60 seconds - please be patient)\n")
         
         try:
             # Monitor coordinator output (first process)
             coordinator = self.processes[0]
+            current_round = 0
             
             for line in coordinator.stdout:
-                print(line, end='')
+                print(line, end='', flush=True)
+                
+                # Track rounds
+                if "[ROUND" in line:
+                    try:
+                        current_round = int(line.split("ROUND")[1].split("]")[0].strip())
+                        print(f"⏳ Round {current_round}/{self.num_rounds} - Training in progress...", flush=True)
+                    except:
+                        pass
                 
                 # Check if all processes are still running
                 if coordinator.poll() is not None:
