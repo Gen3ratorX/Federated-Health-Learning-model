@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Federated Learning Console</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root { --primary: #4F46E5; --primary-dark: #4338ca; --secondary: #10B981; --bg: #F3F4F6; --surface: #ffffff; --text-main: #1F2937; --text-muted: #6B7280; --border: #E5E7EB; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text-main); padding-bottom: 40px; }
+        .container { max-width: 1280px; margin: 0 auto; padding: 0 20px; }
+        .navbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1.5rem 0; margin-bottom: 2rem; }
+        .navbar-content { display: flex; justify-content: space-between; align-items: center; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand h1 { font-size: 1.25rem; font-weight: 700; }
+        .grid-layout { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; }
+        .card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); padding: 24px; height: 100%; }
+        .card-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .card-title { font-weight: 600; color: #374151; }
+        .col-status { grid-column: span 4; } .col-controls { grid-column: span 4; } .col-metrics { grid-column: span 4; } .col-chart { grid-column: span 12; margin-top: 24px; }
+        .form-group { margin-bottom: 16px; }
+        .form-control { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #D1D5DB; }
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { flex: 1; padding: 10px; border-radius: 6px; cursor: pointer; border: none; font-weight: 600; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-danger { background: #EF4444; color: white; }
+        .btn-outline { background: white; border: 1px solid #D1D5DB; }
+        .metric-item { display: flex; justify-content: space-between; padding: 16px 0; border-bottom: 1px dashed var(--border); }
+        .chart-wrapper { height: 400px; }
+        .status-box { background: #F9FAFB; padding: 16px; text-align: center; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="container navbar-content">
+            <div class="brand">
+                <i class="fa-solid fa-notes-medical" style="color: var(--primary); font-size: 24px;"></i>
+                <div>
+                    <h1>Federated Health OS - V2</h1>
+                </div>
+            </div>
+            <button class="btn btn-outline" style="width: auto;" onclick="location.reload()">Refresh</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="grid-layout">
+            
+            <div class="col-status">
+                <div class="card">
+                    <div class="card-header"><h2 class="card-title">Network Status</h2></div>
+                    <div id="statusContent">
+                        <div class="status-box">System Idle</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-controls">
+                <div class="card">
+                    <div class="card-header"><h2 class="card-title">Configuration</h2></div>
+                    
+                    <div class="form-group">
+                        <label>Rounds</label>
+                        <input type="number" id="numRounds" class="form-control" value="5">
+                    </div>
+                    <div class="form-group">
+                        <label>Min Hospitals</label>
+                        <input type="number" id="minClients" class="form-control" value="3">
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="startBtn" onclick="startTraining()">Start</button>
+                        <button class="btn btn-danger" onclick="stopTraining()">Stop</button>
+                    </div>
+
+                    <div style="margin-top: 25px; padding-top: 15px; border-top: 2px dashed #eee;">
+                        <h3 style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">SIMULATION MODE</h3>
+                        <div class="btn-group">
+                            <button class="btn btn-outline" id="launchBtn" onclick="launchHospitals()">
+                                <i class="fa-solid fa-rocket"></i> Launch Clients
+                            </button>
+                            <button class="btn btn-outline" style="color: red; border-color: red;" onclick="killHospitals()">
+                                <i class="fa-solid fa-skull"></i> Kill
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-metrics">
+                <div class="card">
+                    <div class="card-header"><h2 class="card-title">Metrics</h2></div>
+                    <div id="metricsContent">run to see metrics</div>
+                </div>
+            </div>
+
+            <div class="col-chart">
+                <div class="card">
+                    <div class="card-header"><h2 class="card-title">Convergence History</h2></div>
+                    <div class="chart-wrapper"><canvas id="trainingChart"></canvas></div>
+                </div>
+            </div>
+
+            <div style="grid-column: span 12; margin-top: 20px;">
+                <div class="card" style="background: linear-gradient(to bottom right, #F0FDF4, #ffffff); border: 1px solid #86EFAC;">
+                    <div class="card-header">
+                        <h2 class="card-title" style="color: #166534; font-size: 1.2rem;">
+                            <i class="fa-solid fa-user-doctor" style="margin-right: 10px;"></i> 
+                            Doctor's Diagnostic Tool (Inference Mode)
+                        </h2>
+                    </div>
+                    
+                    <div style="display: flex; gap: 40px; align-items: flex-start; padding: 10px;">
+                        
+                        <div style="flex: 1; min-width: 300px;">
+                            <p style="color: #666; font-size: 0.9rem; margin-bottom: 15px;">
+                                Enter patient vitals. The system uses the <b>locally downloaded global model</b> to predict risk privately.
+                            </p>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                                <div class="form-group"><label>Age</label><input type="number" id="p_age" class="form-control" value="65"></div>
+                                <div class="form-group"><label>BMI</label><input type="number" id="p_bmi" class="form-control" value="32"></div>
+                                <div class="form-group"><label>Heart Rate</label><input type="number" id="p_hr" class="form-control" value="72"></div>
+                                
+                                <div class="form-group"><label>Systolic BP</label><input type="number" id="p_sbp" class="form-control" value="145"></div>
+                                <div class="form-group"><label>Diastolic BP</label><input type="number" id="p_dbp" class="form-control" value="90"></div>
+                                <div class="form-group"><label>Cholesterol</label><input type="number" id="p_chol" class="form-control" value="240"></div>
+
+                                <div class="form-group"><label>Glucose</label><input type="number" id="p_gluc" class="form-control" value="110"></div>
+                                <div class="form-group">
+                                    <label>Smoker?</label>
+                                    <select id="p_smoke" class="form-control"><option value="0">No</option><option value="1" selected>Yes</option></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Diabetes?</label>
+                                    <select id="p_diab" class="form-control"><option value="0" selected>No</option><option value="1">Yes</option></select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Family Hist.?</label>
+                                    <select id="p_fam" class="form-control"><option value="0">No</option><option value="1" selected>Yes</option></select>
+                                </div>
+                            </div>
+
+                            <button class="btn" style="background: #166534; color: white; width: 100%; margin-top: 15px; padding: 12px;" onclick="predictRisk()">
+                                <i class="fa-solid fa-stethoscope"></i> Analyze Patient
+                            </button>
+                        </div>
+
+                        <div style="flex: 1; text-align: center; border-left: 2px dashed #BBF7D0; padding-left: 40px; margin-top: 40px;">
+                            <span style="color: #166534; font-weight: 600; font-size: 0.9rem; letter-spacing: 1px; text-transform: uppercase;">AI Risk Assessment</span>
+                            
+                            <div id="predResult" style="font-size: 4rem; font-weight: 800; color: #DC2626; margin: 20px 0; line-height: 1;">--%</div>
+                            
+                            <div id="predLabel" style="font-size: 1.5rem; font-weight: 700; color: #DC2626; margin-bottom: 10px;">Waiting for input...</div>
+                            
+                            <div id="predDetail" style="font-size: 0.85rem; color: #666; font-style: italic;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let chart; 
+
+        // --- DOCTOR / INFERENCE FUNCTION ---
+        async function predictRisk() {
+            // Collect all 10 inputs
+            const body = {
+                age: parseFloat(document.getElementById('p_age').value),
+                bmi: parseFloat(document.getElementById('p_bmi').value),
+                heart_rate: parseFloat(document.getElementById('p_hr').value),
+                bp_systolic: parseFloat(document.getElementById('p_sbp').value),
+                bp_diastolic: parseFloat(document.getElementById('p_dbp').value),
+                cholesterol: parseFloat(document.getElementById('p_chol').value),
+                glucose: parseFloat(document.getElementById('p_gluc').value),
+                smoking: parseInt(document.getElementById('p_smoke').value),
+                diabetes: parseInt(document.getElementById('p_diab').value),
+                family_history: parseInt(document.getElementById('p_fam').value)
+            };
+
+            const resultBox = document.getElementById('predResult');
+            const labelBox = document.getElementById('predLabel');
+            const detailBox = document.getElementById('predDetail');
+
+            // Show loading
+            resultBox.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+            labelBox.innerText = "Analyzing...";
+            
+            try {
+                const res = await fetch(`${API_BASE}/api/doctor/predict`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                const data = await res.json();
+                
+                if (data.detail && data.label === "NO MODEL") {
+                    alert("⚠️ " + data.detail);
+                    resultBox.innerText = "--";
+                    labelBox.innerText = "Train First!";
+                    return;
+                }
+
+                // Update UI
+                resultBox.innerText = data.risk_score + "%";
+                resultBox.style.color = data.color;
+                
+                labelBox.innerText = data.label;
+                labelBox.style.color = data.color;
+                
+                detailBox.innerText = "Confidence based on global federated model";
+
+            } catch (e) {
+                alert("Error: " + e.message);
+                resultBox.innerText = "Err";
+            }
+        }
+
+        // --- SIMULATION FUNCTIONS ---
+        async function launchHospitals() {
+            const btn = document.getElementById('launchBtn');
+            btn.innerHTML = 'Launching...';
+            try {
+                await fetch(`${API_BASE}/api/simulation/launch_hospitals?count=3`, { method: 'POST' });
+                alert("✅ 3 Hospitals Launched!");
+            } catch (e) { alert("Error launching: " + e); }
+            btn.innerHTML = '<i class="fa-solid fa-rocket"></i> Launch 3 Clients';
+        }
+
+        async function killHospitals() {
+            if(confirm("Kill all clients?")) {
+                await fetch(`${API_BASE}/api/simulation/stop_hospitals`, { method: 'POST' });
+                alert("💀 Killed.");
+            }
+        }
+
+        // --- STANDARD FUNCTIONS ---
+        async function startTraining() {
+            const r = document.getElementById('numRounds').value;
+            const c = document.getElementById('minClients').value;
+            await fetch(`${API_BASE}/api/training/start`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ num_rounds: parseInt(r), min_clients: parseInt(c) })
+            });
+        }
+
+        async function stopTraining() {
+            await fetch(`${API_BASE}/api/training/stop`, { method: 'POST' });
+        }
+
+        // --- POLLING & CHARTS ---
+        setInterval(async () => {
+            try {
+                const res = await fetch(`${API_BASE}/api/training/status`);
+                const data = await res.json();
+                
+                document.getElementById('statusContent').innerHTML = `
+                    <div class="status-box" style="background:${data.status==='running'?'#FEF3C7':'#F3F4F6'}">
+                        <b>${data.status.toUpperCase()}</b><br>
+                        Round: ${data.current_round} / ${data.total_rounds}
+                    </div>`;
+
+                if(data.status !== 'idle') {
+                    const mRes = await fetch(`${API_BASE}/api/metrics`);
+                    const mData = await mRes.json();
+                    updateChart(mData);
+                }
+            } catch(e) {}
+        }, 1000);
+
+        function updateChart(data) {
+            if(!chart) {
+                const ctx = document.getElementById('trainingChart').getContext('2d');
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: [], datasets: [{ label: 'Accuracy', data: [], borderColor: '#4F46E5' }] },
+                    options: { maintainAspectRatio: false }
+                });
+            }
+            if(data.rounds && data.rounds.length > 0) {
+                chart.data.labels = data.rounds;
+                chart.data.datasets[0].data = data.eval_accuracy;
+                chart.update();
+            }
+        }
+    </script>
+</body>
+</html>
