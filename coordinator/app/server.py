@@ -124,14 +124,6 @@ class HealthFederatedStrategy(FedAvg):
     ) -> Tuple[Optional[Parameters], Dict[str, Scalar]]:
         """
         Aggregate training results from multiple hospitals
-        
-        Args:
-            server_round: Current FL round number
-            results: List of (client, FitRes) tuples with training results
-            failures: List of failed clients
-        
-        Returns:
-            Aggregated parameters and metrics
         """
         
         self.current_round = server_round
@@ -146,7 +138,7 @@ class HealthFederatedStrategy(FedAvg):
             print("❌ No results to aggregate!")
             return None, {}
         
-        # Aggregate parameters using FedAvg (weighted by number of examples)
+        # Aggregate parameters using FedAvg
         aggregated_parameters, aggregated_metrics = super().aggregate_fit(
             server_round, results, failures
         )
@@ -209,6 +201,9 @@ class HealthFederatedStrategy(FedAvg):
         aggregated_metrics['train_loss_avg'] = avg_loss
         aggregated_metrics['train_accuracy_avg'] = avg_accuracy
         
+        # ✅ REAL-TIME FIX: Save history immediately after training aggregation
+        self.save_final_results()
+        
         return aggregated_parameters, aggregated_metrics
     
     def aggregate_evaluate(
@@ -219,14 +214,6 @@ class HealthFederatedStrategy(FedAvg):
     ) -> Tuple[Optional[float], Dict[str, Scalar]]:
         """
         Aggregate evaluation results from multiple hospitals
-        
-        Args:
-            server_round: Current FL round number
-            results: List of evaluation results
-            failures: List of failed evaluations
-        
-        Returns:
-            Aggregated loss and metrics
         """
         
         print(f"\n{'='*60}")
@@ -237,7 +224,7 @@ class HealthFederatedStrategy(FedAvg):
             print("❌ No evaluation results!")
             return None, {}
         
-        # Aggregate losses (weighted by number of examples)
+        # Aggregate losses
         total_examples = 0
         weighted_loss = 0.0
         weighted_accuracy = 0.0
@@ -297,6 +284,9 @@ class HealthFederatedStrategy(FedAvg):
             'num_hospitals': len(results)
         }
         
+        # ✅ REAL-TIME FIX: Save history immediately after evaluation aggregation
+        self.save_final_results()
+        
         return avg_loss, aggregated_metrics
     
     def _update_global_model(self, parameters: Parameters):
@@ -336,26 +326,22 @@ class HealthFederatedStrategy(FedAvg):
         
         print(f"\n💾 Training history saved: {results_path}")
         
-        # Print final summary
-        print(f"\n{'='*60}")
-        print("FINAL RESULTS SUMMARY")
-        print(f"{'='*60}")
-        print(f"Total rounds: {len(self.history['rounds'])}")
-        print(f"Final train loss: {self.history['train_loss'][-1]:.4f}")
-        print(f"Final train accuracy: {self.history['train_accuracy'][-1]:.4f}")
-        if self.history['eval_loss']:
-            print(f"Final eval loss: {self.history['eval_loss'][-1]:.4f}")
-            print(f"Final eval accuracy: {self.history['eval_accuracy'][-1]:.4f}")
-            print(f"Final eval F1 score: {self.history['eval_f1_score'][-1]:.4f}")
-        print(f"{'='*60}\n")
+        # Print final summary (Only if history exists)
+        if self.history['rounds']:
+            print(f"\n{'='*60}")
+            print("RESULTS UPDATE")
+            print(f"{'='*60}")
+            print(f"Current round: {self.history['rounds'][-1]}")
+            if self.history['train_accuracy']:
+                print(f"Train accuracy: {self.history['train_accuracy'][-1]:.4f}")
+            if self.history['eval_accuracy']:
+                print(f"Eval accuracy: {self.history['eval_accuracy'][-1]:.4f}")
+            print(f"{'='*60}\n")
 
 
 def create_strategy() -> HealthFederatedStrategy:
     """
     Factory function to create the FL strategy
-    
-    Returns:
-        Initialized HealthFederatedStrategy
     """
     return HealthFederatedStrategy(
         fraction_fit=FRACTION_FIT,
@@ -374,11 +360,6 @@ def start_server(
 ):
     """
     Start the Flower server (coordinator)
-    
-    Args:
-        server_address: Address to bind server (host:port)
-        num_rounds: Number of FL rounds to run
-        strategy: FL strategy (if None, creates default)
     """
     
     print(f"\n{'='*60}")
@@ -404,7 +385,7 @@ def start_server(
             strategy=strategy
         )
         
-        # Save final results
+        # Save final results (one last time)
         strategy.save_final_results()
         
         print("\n✅ Federated learning completed successfully!")
@@ -417,10 +398,6 @@ def start_server(
 
 
 if __name__ == "__main__":
-    """
-    Run this script to start the coordinator
-    Usage: python coordinator/app/server.py
-    """
     import argparse
     
     parser = argparse.ArgumentParser(description="Start Flower server (coordinator)")

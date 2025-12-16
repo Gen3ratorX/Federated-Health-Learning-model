@@ -27,7 +27,8 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-danger { background: #EF4444; color: white; }
         .btn-outline { background: white; border: 1px solid #D1D5DB; }
-        .metric-item { display: flex; justify-content: space-between; padding: 16px 0; border-bottom: 1px dashed var(--border); }
+        .metric-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; font-size: 0.95rem; }
+        .metric-item b { color: var(--primary); font-size: 1.1rem; }
         .chart-wrapper { height: 400px; }
         .status-box { background: #F9FAFB; padding: 16px; text-align: center; border-radius: 8px; }
     </style>
@@ -92,8 +93,10 @@
 
             <div class="col-metrics">
                 <div class="card">
-                    <div class="card-header"><h2 class="card-title">Metrics</h2></div>
-                    <div id="metricsContent">run to see metrics</div>
+                    <div class="card-header"><h2 class="card-title">Live Metrics</h2></div>
+                    <div id="metricsContent" style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+                        <div style="text-align: center; color: #9CA3AF;">Waiting for data...</div>
+                    </div>
                 </div>
             </div>
 
@@ -124,25 +127,13 @@
                                 <div class="form-group"><label>Age</label><input type="number" id="p_age" class="form-control" value="65"></div>
                                 <div class="form-group"><label>BMI</label><input type="number" id="p_bmi" class="form-control" value="32"></div>
                                 <div class="form-group"><label>Heart Rate</label><input type="number" id="p_hr" class="form-control" value="72"></div>
-                                
                                 <div class="form-group"><label>Systolic BP</label><input type="number" id="p_sbp" class="form-control" value="145"></div>
                                 <div class="form-group"><label>Diastolic BP</label><input type="number" id="p_dbp" class="form-control" value="90"></div>
                                 <div class="form-group"><label>Cholesterol</label><input type="number" id="p_chol" class="form-control" value="240"></div>
-
                                 <div class="form-group"><label>Glucose</label><input type="number" id="p_gluc" class="form-control" value="110"></div>
-                                <div class="form-group">
-                                    <label>Smoker?</label>
-                                    <select id="p_smoke" class="form-control"><option value="0">No</option><option value="1" selected>Yes</option></select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Diabetes?</label>
-                                    <select id="p_diab" class="form-control"><option value="0" selected>No</option><option value="1">Yes</option></select>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label>Family Hist.?</label>
-                                    <select id="p_fam" class="form-control"><option value="0">No</option><option value="1" selected>Yes</option></select>
-                                </div>
+                                <div class="form-group"><label>Smoker?</label><select id="p_smoke" class="form-control"><option value="0">No</option><option value="1" selected>Yes</option></select></div>
+                                <div class="form-group"><label>Diabetes?</label><select id="p_diab" class="form-control"><option value="0" selected>No</option><option value="1">Yes</option></select></div>
+                                <div class="form-group"><label>Family Hist.?</label><select id="p_fam" class="form-control"><option value="0">No</option><option value="1" selected>Yes</option></select></div>
                             </div>
 
                             <button class="btn" style="background: #166534; color: white; width: 100%; margin-top: 15px; padding: 12px;" onclick="predictRisk()">
@@ -152,11 +143,8 @@
 
                         <div style="flex: 1; text-align: center; border-left: 2px dashed #BBF7D0; padding-left: 40px; margin-top: 40px;">
                             <span style="color: #166534; font-weight: 600; font-size: 0.9rem; letter-spacing: 1px; text-transform: uppercase;">AI Risk Assessment</span>
-                            
                             <div id="predResult" style="font-size: 4rem; font-weight: 800; color: #DC2626; margin: 20px 0; line-height: 1;">--%</div>
-                            
                             <div id="predLabel" style="font-size: 1.5rem; font-weight: 700; color: #DC2626; margin-bottom: 10px;">Waiting for input...</div>
-                            
                             <div id="predDetail" style="font-size: 0.85rem; color: #666; font-style: italic;"></div>
                         </div>
                     </div>
@@ -166,12 +154,11 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8000';
+        const API_BASE = ''; 
         let chart; 
 
         // --- DOCTOR / INFERENCE FUNCTION ---
         async function predictRisk() {
-            // Collect all 10 inputs
             const body = {
                 age: parseFloat(document.getElementById('p_age').value),
                 bmi: parseFloat(document.getElementById('p_bmi').value),
@@ -184,12 +171,10 @@
                 diabetes: parseInt(document.getElementById('p_diab').value),
                 family_history: parseInt(document.getElementById('p_fam').value)
             };
-
             const resultBox = document.getElementById('predResult');
             const labelBox = document.getElementById('predLabel');
             const detailBox = document.getElementById('predDetail');
 
-            // Show loading
             resultBox.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
             labelBox.innerText = "Analyzing...";
             
@@ -199,7 +184,6 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
-
                 const data = await res.json();
                 
                 if (data.detail && data.label === "NO MODEL") {
@@ -208,16 +192,11 @@
                     labelBox.innerText = "Train First!";
                     return;
                 }
-
-                // Update UI
                 resultBox.innerText = data.risk_score + "%";
                 resultBox.style.color = data.color;
-                
                 labelBox.innerText = data.label;
                 labelBox.style.color = data.color;
-                
                 detailBox.innerText = "Confidence based on global federated model";
-
             } catch (e) {
                 alert("Error: " + e.message);
                 resultBox.innerText = "Err";
@@ -273,16 +252,38 @@
                     const mRes = await fetch(`${API_BASE}/api/metrics`);
                     const mData = await mRes.json();
                     updateChart(mData);
+                    updateMetricsText(mData); // ✅ NEW: Updates the text numbers
                 }
             } catch(e) {}
         }, 1000);
+
+        function updateMetricsText(data) {
+            const div = document.getElementById('metricsContent');
+            if (!data.rounds || data.rounds.length === 0) {
+                div.innerHTML = '<div style="text-align: center; color: #9CA3AF;">Waiting for results...</div>';
+                return;
+            }
+            
+            // Get latest values
+            const i = data.rounds.length - 1;
+            const acc = (data.eval_accuracy[i] * 100).toFixed(2);
+            const loss = data.eval_loss[i].toFixed(4);
+            const f1 = (data.eval_f1_score[i]).toFixed(4);
+            
+            div.innerHTML = `
+                <div class="metric-item"><span>Accuracy:</span> <b>${acc}%</b></div>
+                <div class="metric-item"><span>Loss:</span> <b>${loss}</b></div>
+                <div class="metric-item"><span>F1 Score:</span> <b>${f1}</b></div>
+                <div class="metric-item"><span>Rounds:</span> <b>${data.rounds[i]}</b></div>
+            `;
+        }
 
         function updateChart(data) {
             if(!chart) {
                 const ctx = document.getElementById('trainingChart').getContext('2d');
                 chart = new Chart(ctx, {
                     type: 'line',
-                    data: { labels: [], datasets: [{ label: 'Accuracy', data: [], borderColor: '#4F46E5' }] },
+                    data: { labels: [], datasets: [{ label: 'Accuracy', data: [], borderColor: '#4F46E5', tension: 0.1 }] },
                     options: { maintainAspectRatio: false }
                 });
             }
